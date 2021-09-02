@@ -1,10 +1,11 @@
 package pkg
 
 type Scene struct {
-	Camera SceneCam
+	Camera   *SceneCam
 	Geometry []RefTriangle
-	Points []Vec3t
+	Points   []Vec3t
 	Textures []*Texture
+	Time     float64
 }
 
 func (s *Scene) AddCube() {
@@ -32,11 +33,12 @@ func (s *Scene) AddCube() {
 
 func NewScene() *Scene {
 	nt := NullTexture()
+	cam := SceneCam{
+		Position: Vec3{0, 0, 5},
+		Target:   Vec3{0, 0, 0},
+	}
 	return &Scene{
-		Camera:   SceneCam{
-			Position: Vec3{0, 0, 5},
-			Target:   Vec3{0, 0, 0},
-		},
+		Camera:   &cam,
 		Geometry: []RefTriangle{},
 		Points:   []Vec3t{},
 		Textures: []*Texture{&nt},
@@ -59,13 +61,17 @@ func (s *Scene) Project(screenWidth, screenHeight float64) []Vec3t{ // TODO: sho
 	out := make([]Vec3t, len(s.Points))
 	for i := 0; i < len(in); i++ {
 		world.mulVec3t(&in[i], &out[i])
-		projt.mulVec3t(&in[i], &out[i])
+		projt.mulVec3t(&out[i], &out[i])
 
 		// scale from -1..1 range and centre for screen
-		out[i].X = out[i].X * halfWidth + halfWidth
-		out[i].Y = out[i].Y * halfHeight + halfHeight
+		out[i].X = out[i].X /* * halfWidth*/ + halfWidth
+		out[i].Y = out[i].Y /* * halfHeight*/ + halfHeight
 	}
 	return out
+}
+
+func (s *Scene) Advance(t int64) {
+	s.Time += float64(t) / 1000.0
 }
 
 type RefTriangle struct {

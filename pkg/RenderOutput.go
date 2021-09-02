@@ -1,6 +1,9 @@
 package pkg
 
-import "unsafe"
+import (
+	"math"
+	"unsafe"
+)
 
 type Renderer struct {
 	width  int
@@ -51,8 +54,6 @@ func makeFrame(width, height int) RenderFrame {
 	}
 }
 
-var frameCount int
-
 // TODO: move Update to a different place
 
 // Update should update the world state and draw into the target buffer.
@@ -64,12 +65,18 @@ func (r *Renderer) Update(t int64) {
 	frame := r.TargetFrame()
 	frame.Clear(0) // shouldn't be needed when rendering complete scenes
 
+	r.scene.Advance(t)
+	r.scene.Camera.Position = Vec3{
+		math.Cos(r.scene.Time)*5, math.Sin(r.scene.Time)-1, math.Sin(r.scene.Time)*5,
+	}
+
 	scene := r.scene.Project(float64(frame.Width), float64(frame.Height))
 
 	buf := frame.bmp
 	size := frame.Width*frame.Height
 
 	var white uint32 = 0xFFffFFff
+	buf[int(r.scene.Time)] = white
 	for i := 0; i < len(scene); i++ {
 		v := scene[i]
 		pi := int(v.Y)*frame.Width + int(v.X)
