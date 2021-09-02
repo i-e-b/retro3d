@@ -257,15 +257,14 @@ func setDIBitsToDevice(hdc uintptr,
 	w,h,
 	xSrc, ySrc int32,
 	startScan uint32, cScanLines uint32,
-	buffer *byte,
+	buffer uintptr,
 	bitInfo *tBITMAPINFO, colorMode uint32)uintptr{
 
 	r1, _, _ := pSetDIBitsToDevice.Call(hdc,
 		uintptr(xDest), uintptr(yDest),
 		uintptr(w), uintptr(h),
 		uintptr(xSrc), uintptr(ySrc),
-		uintptr(startScan), uintptr(cScanLines),
-		uintptr(unsafe.Pointer(buffer)),
+		uintptr(startScan), uintptr(cScanLines), buffer,
 		uintptr(unsafe.Pointer(bitInfo)), uintptr(colorMode))
 	return r1
 }

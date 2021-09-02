@@ -7,8 +7,8 @@ type Vec3 struct {
 }
 
 type Vec3t struct {
-	x,y,z float64
-	u,v uint32
+	X, Y, Z float64
+	U, V    uint32
 }
 
 // DotV3 gives the dot-product / scalar-product of two 3D vectors

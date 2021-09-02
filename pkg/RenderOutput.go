@@ -5,6 +5,7 @@ import "unsafe"
 type Renderer struct {
 	width  int
 	height int
+	scene *Scene
 }
 
 // for some reason, if these are inside the struct, they won't draw in Win32
@@ -17,7 +18,7 @@ var (
 type RenderFrame struct {
 	Width      int
 	Height     int
-	bmp        []byte
+	bmp        []uint32
 	scanBytes  int
 	frameBytes uint64
 }
@@ -26,16 +27,21 @@ func NewRenderer(width, height int) *Renderer {
 	frameA = makeFrame(width, height)
 	frameB = makeFrame(width, height)
 	targetA = true
+
+	basicScene := NewScene()
+	basicScene.AddCube()
+
 	return &Renderer{
-		width:   width,
-		height:  height,
+		width:  width,
+		height: height,
+		scene:  basicScene,
 	}
 }
 
 func makeFrame(width, height int) RenderFrame {
 	scanBytes := width * 4
 	bmpSize := uint64(scanBytes) * uint64(height) // 32 bit argb
-	bmp := make([]byte, bmpSize)
+	bmp := make([]uint32, bmpSize)
 	return RenderFrame{
 		Width:  width,
 		Height: height,
@@ -46,6 +52,9 @@ func makeFrame(width, height int) RenderFrame {
 }
 
 var frameCount int
+
+// TODO: move Update to a different place
+
 // Update should update the world state and draw into the target buffer.
 // You should switch buffers when you're finished.
 func (r *Renderer) Update(t int64) {
@@ -53,30 +62,19 @@ func (r *Renderer) Update(t int64) {
 
 	// any world logic can go in here
 	frame := r.TargetFrame()
+	frame.Clear(0) // shouldn't be needed when rendering complete scenes
 
-	//buf := frame.bmp
-	buf := frame.wordArray()
-	frameCount++
+	scene := r.scene.Project(float64(frame.Width), float64(frame.Height))
 
-	var y,x int
-	var i int
-	var v uint32
+	buf := frame.bmp
+	size := frame.Width*frame.Height
 
 	var white uint32 = 0xFFffFFff
-
-	for y = 0; y < frame.Height; y++ {
-		i = y * frame.scanBytes / 4
-		for x = 0; x < frame.Width; x++ {
-			v = white * uint32((x+y)%2)
-			buf[i] = v
-			i++
-			/*v = byte( y + x + frameCount )
-			buf[i+0] = v    // B
-			buf[i+1] = v	// G
-			buf[i+2] = v	// R
-			buf[i+3] = 0	// A - mostly ignored
-
-			i += 4*/
+	for i := 0; i < len(scene); i++ {
+		v := scene[i]
+		pi := int(v.Y)*frame.Width + int(v.X)
+		if pi >= 0 && pi < size{
+			buf[pi] = white
 		}
 	}
 }
@@ -97,11 +95,19 @@ func (r *Renderer) RenderFrame() RenderFrame {
 	return frameA
 }
 
-func (f *RenderFrame) GetBufferPointer() *byte { return &f.bmp[0] }
+func (f *RenderFrame) GetBufferPointer() uintptr {
+	return uintptr(unsafe.Pointer(&f.bmp[0]))
+}
 
-// wordArray puns the byte buffer into a 32bit word array
-func (f *RenderFrame) wordArray() []uint32 {
-	newLen := len(f.bmp) / 4
-	ptr := (*uint32)(unsafe.Pointer(&(f.bmp[0])))
-	return unsafe.Slice(ptr, newLen) // go 1.17+
+func (f *RenderFrame) Clear(color uint32) {
+	var y,x int
+	var i int
+
+	for y = 0; y < f.Height; y++ {
+		i = y * f.Width
+		for x = 0; x < f.Width; x++ {
+			f.bmp[i] = color
+			i++
+		}
+	}
 }
