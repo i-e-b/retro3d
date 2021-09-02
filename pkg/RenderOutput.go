@@ -1,5 +1,7 @@
 package pkg
 
+import "unsafe"
+
 type Renderer struct {
 	width  int
 	height int
@@ -52,23 +54,29 @@ func (r *Renderer) Update(t int64) {
 	// any world logic can go in here
 	frame := r.TargetFrame()
 
-	buf := frame.bmp
+	//buf := frame.bmp
+	buf := frame.wordArray()
 	frameCount++
 
 	var y,x int
 	var i int
-	var v byte
+	var v uint32
+
+	var white uint32 = 0xFFffFFff
 
 	for y = 0; y < frame.Height; y++ {
-		i = y * frame.scanBytes
+		i = y * frame.scanBytes / 4
 		for x = 0; x < frame.Width; x++ {
-			v = byte( y + x + frameCount )
+			v = white * uint32((x+y)%2)
+			buf[i] = v
+			i++
+			/*v = byte( y + x + frameCount )
 			buf[i+0] = v    // B
 			buf[i+1] = v	// G
 			buf[i+2] = v	// R
 			buf[i+3] = 0	// A - mostly ignored
 
-			i += 4
+			i += 4*/
 		}
 	}
 }
@@ -93,8 +101,7 @@ func (f *RenderFrame) GetBufferPointer() *byte { return &f.bmp[0] }
 
 // wordArray puns the byte buffer into a 32bit word array
 func (f *RenderFrame) wordArray() []uint32 {
-	//newLen := len(f.bmp) / 4
-	//ptr := (*uint32)(unsafe.Pointer(&(f.bmp[0])))
-	//return unsafe.Slice(ptr, newLen) // go 1.17+
-	return nil
+	newLen := len(f.bmp) / 4
+	ptr := (*uint32)(unsafe.Pointer(&(f.bmp[0])))
+	return unsafe.Slice(ptr, newLen) // go 1.17+
 }
