@@ -228,152 +228,176 @@ func drawTexPolyPerspDivSubTriSegment(poly *mappingVars, y1, y2 int) {
 	texH := int64(poly.tex.Height - 1)
 
 	for y1 < y2 { // Loop through all lines in segment
+		if y1 >= 0 {
+			var iz, uiz, viz float64
+			var u1, v1, u2, v2, u, v, du, dv int64
+			var x1 = int(poly.xa)
+			var x2 = int(poly.xb)
 
-		var iz, uiz, viz float64
-		var u1, v1, u2, v2, u, v, du, dv int64
-		var x1 = int(poly.xa)
-		var x2 = int(poly.xb)
+			if x1 < 0 {
+				x1 = 0
+			} else if x1 >= poly.screenWidth {
+				x1 = poly.screenWidth - 1
+			}
+			if x2 < 0 {
+				x2 = 0
+			} else if x2 >= poly.screenWidth {
+				x2 = poly.screenWidth - 1
+			}
 
-		if x1 < 0 {x1 = 0} else if x1 >= poly.screenWidth{x1 = poly.screenWidth-1}
-		if x2 < 0 {x2 = 0} else if x2 >= poly.screenWidth{x2 = poly.screenWidth-1}
+			// Perform sub-texel pre-stepping on 1/Z, U/Z and V/Z
 
-		// Perform sub-texel pre-stepping on 1/Z, U/Z and V/Z
+			var dx = 1 - (poly.xa - float64(x1))
+			iz = poly.iza + dx*poly.dizdx
+			uiz = poly.uiza + dx*poly.duizdx
+			viz = poly.viza + dx*poly.dvizdx
 
-		var dx = 1 - (poly.xa - float64(x1))
-		iz = poly.iza + dx*poly.dizdx
-		uiz = poly.uiza + dx*poly.duizdx
-		viz = poly.viza + dx*poly.dvizdx
+			var cursor = y1*poly.screenWidth + x1 // for poly.screen
 
-		var cursor = y1*poly.screenWidth + x1 // for poly.screen
+			// Calculate UV for the first pixel
 
-		// Calculate UV for the first pixel
-
-		var z = 65536 / iz
-		u2 = int64(uiz * z)
-		v2 = int64(viz * z)
-
-		// Length of line segment
-		var xcount = int64(x2 - x1)
-
-		for xcount >= subDivSize { // Draw all full-length
-
-			//  spans
-			// Step 1/Z, U/Z and V/Z to the next span
-
-			iz += poly.dizdxn
-			uiz += poly.duizdxn
-			viz += poly.dvizdxn
-
-			u1 = u2
-			v1 = v2
-
-			// Calculate UV at the beginning of next span
-
-			z = 65536 / iz
+			var z = 65536 / iz
 			u2 = int64(uiz * z)
 			v2 = int64(viz * z)
 
-			u = u1
-			v = v1
+			// Length of line segment
+			var xcount = int64(x2 - x1)
 
-			// Calculate linear UV slope over span
+			for xcount >= subDivSize { // Draw all full-length
 
-			du = (u2 - u1) >> subDivShift
-			dv = (v2 - v1) >> subDivShift
+				//  spans
+				// Step 1/Z, U/Z and V/Z to the next span
 
-			// do jitter smoothing if texels cover more than one pixel
-			var qq int64 = 1 << 15
-			if (du>>15) > 1 || (dv>>15) > 1 {
-				qq = 0
+				iz += poly.dizdxn
+				uiz += poly.duizdxn
+				viz += poly.dvizdxn
+
+				u1 = u2
+				v1 = v2
+
+				// Calculate UV at the beginning of next span
+
+				z = 65536 / iz
+				u2 = int64(uiz * z)
+				v2 = int64(viz * z)
+
+				u = u1
+				v = v1
+
+				// Calculate linear UV slope over span
+
+				du = (u2 - u1) >> subDivShift
+				dv = (v2 - v1) >> subDivShift
+
+				// do jitter smoothing if texels cover more than one pixel
+				var qq int64 = 1 << 15
+				if (du>>15) > 1 || (dv>>15) > 1 {
+					qq = 0
+				}
+				var j = qq * int64((x1+y1)%2)
+
+				var x = subDivSize
+				for x > 0 { // Draw span
+					x--
+					// Copy pixel from texture to screen
+
+					// jitter the u and v sample points by half a texel
+					// on alternating output pixels as a crude anti-alias
+					j = qq - j
+					var ju = u + j
+					var jv = v + j
+
+					var intU = ju >> 16
+					var intV = jv >> 16
+					if intU > texW {
+						intU = texW
+					} else if intU < 0 {
+						intU = 0
+					}
+					if intV > texH {
+						intV = texH
+					} else if intV < 0 {
+						intV = 0
+					}
+
+					color := poly.tex.Bmp[intV][intU]
+					(*poly.screen)[cursor] = color
+					cursor++
+
+					// Step horizontally along UV axes
+
+					u += du
+					v += dv
+				}
+
+				xcount -= subDivSize // One span less
 			}
-			var j = qq * int64(y1%2)
 
-			var x = subDivSize
-			for x > 0 { // Draw span
-				x--
-				// Copy pixel from texture to screen
+			if xcount != 0 { // Draw last, non-full-length span
 
-				// jitter the u and v sample points by half a texel
-				// on alternating output pixels as a crude anti-alias
-				j = qq - j
-				var ju = u + j
-				var jv = v + j
+				// Step 1/Z, U/Z and V/Z to end of span
 
-				var intU = ju >> 16
-				var intV = jv >> 16
-				if intU > texW {intU = texW} else if intU < 0 {intU = 0}
-				if intV > texH {intV = texH} else if intV < 0 {intV = 0}
+				iz += poly.dizdx * float64(xcount)
+				uiz += poly.duizdx * float64(xcount)
+				viz += poly.dvizdx * float64(xcount)
 
-				color := poly.tex.Bmp[intV][intU]
-				(*poly.screen)[cursor] = color
-				cursor++
+				u1 = u2
+				v1 = v2
 
-				// Step horizontally along UV axes
+				// Calculate UV at end of span
 
-				u += du
-				v += dv
+				z = 65536 / iz
+				u2 = int64(uiz * z)
+				v2 = int64(viz * z)
+
+				u = u1
+				v = v1
+
+				// Calculate linear UV slope over span
+
+				du = (u2 - u1) / xcount
+				dv = (v2 - v1) / xcount
+
+				// do jitter smoothing if texels cover more than one pixel
+				var qq int64 = 1 << 15
+				if (du>>15) > 1 || (dv>>15) > 1 {
+					qq = 0
+				}
+				var j = qq * int64((x1+y1)%2)
+
+				for xcount > 0 { // Draw span
+					xcount--
+
+					// jitter the u and v sample points by half a texel
+					// on alternating output pixels as a crude anti-alias
+					j = qq - j
+					var ju = u + j
+					var jv = v + j
+
+					var intU = ju >> 16
+					var intV = jv >> 16
+					if intU > texW {
+						intU = texW
+					} else if intU < 0 {
+						intU = 0
+					}
+					if intV > texH {
+						intV = texH
+					} else if intV < 0 {
+						intV = 0
+					}
+
+					// Copy pixel from texture to screen
+					color := poly.tex.Bmp[intV][intU]
+					(*poly.screen)[cursor] = color
+					cursor++
+
+					// Step horizontally along UV axes
+					u += du
+					v += dv
+				}
 			}
-
-			xcount -= subDivSize // One span less
 		}
-
-		if xcount != 0 { // Draw last, non-full-length span
-
-			// Step 1/Z, U/Z and V/Z to end of span
-
-			iz += poly.dizdx * float64(xcount)
-			uiz += poly.duizdx * float64(xcount)
-			viz += poly.dvizdx * float64(xcount)
-
-			u1 = u2
-			v1 = v2
-
-			// Calculate UV at end of span
-
-			z = 65536 / iz
-			u2 = int64(uiz * z)
-			v2 = int64(viz * z)
-
-			u = u1
-			v = v1
-
-			// Calculate linear UV slope over span
-
-			du = (u2 - u1) / xcount
-			dv = (v2 - v1) / xcount
-
-			// do jitter smoothing if texels cover more than one pixel
-			var qq int64 = 1 << 15
-			if (du>>15) > 1 || (dv>>15) > 1 {
-				qq = 0
-			}
-			var j = qq * int64(y1%2)
-
-			for xcount > 0 { // Draw span
-				xcount--
-
-				// jitter the u and v sample points by half a texel
-				// on alternating output pixels as a crude anti-alias
-				j = qq - j
-				var ju = u + j
-				var jv = v + j
-
-				var intU = ju >> 16
-				var intV = jv >> 16
-				if intU > texW {intU = texW} else if intU < 0 {intU = 0}
-				if intV > texH {intV = texH} else if intV < 0 {intV = 0}
-
-				// Copy pixel from texture to screen
-				color := poly.tex.Bmp[intV][intU]
-				(*poly.screen)[cursor] = color
-				cursor++
-
-				// Step horizontally along UV axes
-				u += du
-				v += dv
-			}
-		}
-
 		// Step vertically along both edges
 
 		poly.xa += poly.dxdya

@@ -100,7 +100,7 @@ func drawLoop() {
 			lastFrame = time.Now()
 		}
 
-		time.Sleep(10*time.Millisecond)
+		time.Sleep(5*time.Millisecond)
 	}
 }
 

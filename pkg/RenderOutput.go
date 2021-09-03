@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"math"
 	"sort"
 	"unsafe"
 )
@@ -76,8 +75,9 @@ func (r *Renderer) Update(t int64) {
 	// Update scene
 	r.scene.Advance(t)
 	r.scene.Camera.Position = Vec3{
-		math.Cos(r.scene.Time/6)*5, math.Sin(r.scene.Time/4), math.Sin(r.scene.Time/2)*5,
+		/*math.Cos(r.scene.Time/6)*5*/-1, /*math.Sin(r.scene.Time/4)*/ -1, /*math.Sin(r.scene.Time/2)*5*/ -3,
 	}
+	r.scene.Camera.Target.Y = r.scene.Camera.Position.Y // cheat so we don't need a correct 'up' vector
 
 	// Do the transforms (scene & perspective)
 	points := r.scene.ProjectPoints(float64(frame.Width), float64(frame.Height))
@@ -89,12 +89,10 @@ func (r *Renderer) Update(t int64) {
 		triangles[i] = &geom[i]
 	}
 	sort.Slice(triangles, func(i, j int) bool {
-		a := triangles[i]
-		b := triangles[j]
+		a := triangles[i]; b := triangles[j]
 
-		aveA := (points[a.A].Z+points[a.B].Z+points[a.C].Z) / 3
-		aveB := (points[b.A].Z+points[b.B].Z+points[b.C].Z) / 3
-		//fmt.Printf("%v %v | ", aveA, aveB)
+		aveA := points[a.A].Z+points[a.B].Z+points[a.C].Z
+		aveB := points[b.A].Z+points[b.B].Z+points[b.C].Z
 		return aveA < aveB
 	})
 

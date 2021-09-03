@@ -110,9 +110,8 @@ func (s *Scene) AddCube() {
 }
 
 func (s *Scene) ProjectPoints(screenWidth, screenHeight float64) []Vec3t{
-	up := Vec3{0,1,0}
 	world := &Mat4x4{}
-	world.setLookAt(s.Camera.Position, s.Camera.Target, up)
+	world.setLookAt(s.Camera.Position, s.Camera.Target)
 
 	viewAngle := screenHeight / screenWidth // or ~ 0.7
 	projt := &Mat4x4{}

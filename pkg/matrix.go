@@ -39,8 +39,24 @@ func (M *Mat4x4) mulVec3t(in, out *Vec3t) {
 }
 
 // setLookAt sets the matrix to translate by position, then rotate toward target and up.
-func (M *Mat4x4)setLookAt(position, target, up Vec3){
+func (M *Mat4x4)setLookAt(position, target Vec3){
+
 	zx := NormalV3(SubV3(target, position))
+
+	// "For any nonzero vector (a,b,c), the three of (0,c,−b),(−c,0,a) and (−b,a,0) are orthogonal to it."
+	// "the vector (sz(z+sz)−x^2,−xy,−x(z+sz)) with sz:=sign(z)∥(x,y,z)∥ is orthogonal to the vector (x,y,z)"
+	up := Vec3{0,1,0} // TODO: calculate this from position and target
+
+	//sz := LengthV3(zx) * SignZV3(zx)
+	//up := Vec3{sz+(zx.Z+sz)-(zx.X*zx.X), -zx.X * zx.Y, -zx.X*(zx.Z+sz)}
+
+	//up := Vec3{-zx.Z,0,zx.X} // (−c,0,a)
+	//up := Vec3{0, zx.Z, -zx.Y} // (0,c,-b)
+	//up := Vec3{0, -zx.Z, zx.Y}
+
+	//up := Vec3{-zx.Z,1,zx.X} // (−c,0,a)
+
+	up = NormalV3(up)
 	xx := NormalV3(CrossV3(up, position))
 	yx := CrossV3(zx, xx)
 	ne := InvV3(position)
