@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"math"
+	"sort"
 	"unsafe"
 )
 
@@ -65,24 +66,44 @@ func (r *Renderer) Update(t int64) {
 	frame := r.TargetFrame()
 	frame.Clear(0) // shouldn't be needed when rendering complete scenes
 
+	buf := frame.bmp
+
+	// Update scene
 	r.scene.Advance(t)
 	r.scene.Camera.Position = Vec3{
-		math.Cos(r.scene.Time)*5, math.Sin(r.scene.Time)-1, math.Sin(r.scene.Time)*5,
+		math.Cos(r.scene.Time/3)*5, math.Sin(r.scene.Time/2)-1, math.Sin(r.scene.Time)*5,
 	}
 
-	scene := r.scene.Project(float64(frame.Width), float64(frame.Height))
+	// Do the transforms (scene & perspective)
+	points := r.scene.ProjectPoints(float64(frame.Width), float64(frame.Height))
 
-	buf := frame.bmp
-	size := frame.Width*frame.Height
+	// Sort geometry far to near
+	geom := r.scene.Geometry
+	triangles := make([]*RefTriangle, len(geom))
+	for i := 0; i < len(geom); i++ {
+		triangles[i] = &geom[i]
+	}
+	sort.Slice(triangles, func(i, j int) bool {
+		a := triangles[i]
+		b := triangles[j]
 
-	var white uint32 = 0xFFffFFff
-	buf[int(r.scene.Time)] = white
-	for i := 0; i < len(scene); i++ {
-		v := scene[i]
-		pi := int(v.Y)*frame.Width + int(v.X)
-		if pi >= 0 && pi < size{
-			buf[pi] = white
-		}
+		aveA := (points[a.A].Z+points[a.B].Z+points[a.C].Z) / 3
+		aveB := (points[b.A].Z+points[b.B].Z+points[b.C].Z) / 3
+		//fmt.Printf("%v %v | ", aveA, aveB)
+		return aveA < aveB
+	})
+
+	// Render geometry
+	end := len(triangles)
+	for i := 0; i < end; i++ {
+		tri := triangles[i]
+
+		tex := r.scene.Textures[tri.Tex]
+		a := points[tri.A]
+		b := points[tri.B]
+		c := points[tri.C]
+
+		TextureTriangle(a,b,c, tex, &buf, frame.Width, frame.Height) // TODO: no depth buffering here yet
 	}
 }
 
