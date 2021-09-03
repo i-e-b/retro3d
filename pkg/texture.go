@@ -42,9 +42,6 @@ func LoadFromPng(fileName string) Texture{
 	}
 	defer func(texture *os.File) {_ = texture.Close() }(texture)
 
-	//imData, imType, err := image.Decode(texture)
-	//if err != nil {fmt.Println(err)}
-
 	texImg, err := png.Decode(texture)
 	if err != nil {
 		log.Fatal(err)

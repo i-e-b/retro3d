@@ -8,25 +8,50 @@ type Scene struct {
 	Time     float64
 }
 
-func (s *Scene)AddFancyCube(){
-	texIdx := len(s.Textures)
-	tex := LoadFromPng("img/tex.png")
-	s.Textures = append(s.Textures, &tex)
+type RefTriangle struct {
+	// A, B, and C are indexes to the scene's Points list.
+	A,B,C int
+	// Tex is an index to the scene's Textures list.
+	Tex int
+}
 
+type SceneCam struct {
+	Position Vec3
+	Target Vec3
+}
+
+
+func NewScene() *Scene {
+	nt := NullTexture()
+	cam := SceneCam{
+		Position: Vec3{0, 0, 5},
+		Target:   Vec3{0, 0, 0},
+	}
+	return &Scene{
+		Camera:   &cam,
+		Geometry: []RefTriangle{},
+		Points:   []Vec3t{},
+		Textures: []*Texture{&nt},
+	}
+}
+
+
+func (s *Scene)AddFancyCube(texIdx int, px,py,pz float64){
+	tex := s.Textures[texIdx]
 	base := len(s.Points)
 	w := tex.Width
 	h := tex.Height
 
 	// Add points
-	s.Points = append(s.Points, Vec3t{X: 1, Y:  1, Z:  1, U: w, V: 0})
-	s.Points = append(s.Points, Vec3t{X: -1, Y:  1, Z:  1, U: 0, V: 0})
-	s.Points = append(s.Points, Vec3t{X: -1, Y: -1, Z:  1, U: 0, V: h})
-	s.Points = append(s.Points, Vec3t{X: 1, Y: -1, Z:  1, U: w, V: h})
+	s.Points = append(s.Points, Vec3t{X: px+1, Y: py+1, Z: pz+1, U: w, V: 0})
+	s.Points = append(s.Points, Vec3t{X: px-1, Y: py+1, Z: pz+1, U: 0, V: 0})
+	s.Points = append(s.Points, Vec3t{X: px-1, Y: py-1, Z: pz+1, U: 0, V: h})
+	s.Points = append(s.Points, Vec3t{X: px+1, Y: py-1, Z: pz+1, U: w, V: h})
 
-	s.Points = append(s.Points, Vec3t{X: -1, Y:  1, Z: -1, U: w, V: h})
-	s.Points = append(s.Points, Vec3t{X: -1, Y: -1, Z: -1, U: w, V: 0})
-	s.Points = append(s.Points, Vec3t{X: 1, Y: -1, Z: -1, U: 0, V: 0})
-	s.Points = append(s.Points, Vec3t{X: 1, Y:  1, Z: -1, U: 0, V: h})
+	s.Points = append(s.Points, Vec3t{X: px-1, Y: py+1, Z: pz-1, U: w, V: h})
+	s.Points = append(s.Points, Vec3t{X: px-1, Y: py-1, Z: pz-1, U: w, V: 0})
+	s.Points = append(s.Points, Vec3t{X: px+1, Y: py-1, Z: pz-1, U: 0, V: 0})
+	s.Points = append(s.Points, Vec3t{X: px+1, Y: py+1, Z: pz-1, U: 0, V: h})
 
 	// Stitch triangles
 	// back
@@ -84,27 +109,14 @@ func (s *Scene) AddCube() {
 	s.Geometry = append(s.Geometry, RefTriangle{A: base + 6, B: base + 3, C: base + 0, Tex: 0})
 }
 
-func NewScene() *Scene {
-	nt := NullTexture()
-	cam := SceneCam{
-		Position: Vec3{0, 0, 5},
-		Target:   Vec3{0, 0, 0},
-	}
-	return &Scene{
-		Camera:   &cam,
-		Geometry: []RefTriangle{},
-		Points:   []Vec3t{},
-		Textures: []*Texture{&nt},
-	}
-}
-
 func (s *Scene) ProjectPoints(screenWidth, screenHeight float64) []Vec3t{
-	up := Vec3{0,0,1}
+	up := Vec3{0,1,0}
 	world := &Mat4x4{}
 	world.setLookAt(s.Camera.Position, s.Camera.Target, up)
 
+	viewAngle := screenHeight / screenWidth // or ~ 0.7
 	projt := &Mat4x4{}
-	projt.setProjectionMatrix(0.78,0.01, 10000.0)
+	projt.setProjectionMatrix(viewAngle,0.01, 100.0)
 
 	halfWidth := screenWidth / 2.0
 	halfHeight := screenHeight / 2.0
@@ -129,14 +141,9 @@ func (s *Scene) Advance(t int64) {
 	s.Time += float64(t) / 1000.0
 }
 
-type RefTriangle struct {
-	// A, B, and C are indexes to the scene's Points list.
-	A,B,C int
-	// Tex is an index to the scene's Textures list.
-	Tex int
-}
-
-type SceneCam struct {
-	Position Vec3
-	Target Vec3
+func (s *Scene) AddTexture(fileName string) (index int){
+	texIdx := len(s.Textures)
+	tex := LoadFromPng(fileName)
+	s.Textures = append(s.Textures, &tex)
+	return texIdx
 }

@@ -33,8 +33,12 @@ func NewRenderer(width, height int) *Renderer {
 	targetA = true
 
 	basicScene := NewScene()
-	//basicScene.AddCube()
-	basicScene.AddFancyCube()
+
+	basicScene.AddCube()
+	wallTex := basicScene.AddTexture("img/wall.png")
+	wordTex := basicScene.AddTexture("img/text.png")
+	basicScene.AddFancyCube(wallTex,-2.0, 0.0, 0.0)
+	basicScene.AddFancyCube(wordTex,2.0, 0.0, 0.0)
 
 	return &Renderer{
 		width:  width,
@@ -72,7 +76,7 @@ func (r *Renderer) Update(t int64) {
 	// Update scene
 	r.scene.Advance(t)
 	r.scene.Camera.Position = Vec3{
-		math.Cos(r.scene.Time/3)*5, math.Sin(r.scene.Time/2), math.Sin(r.scene.Time)*5,
+		math.Cos(r.scene.Time/6)*5, math.Sin(r.scene.Time/4), math.Sin(r.scene.Time/2)*5,
 	}
 
 	// Do the transforms (scene & perspective)
@@ -104,7 +108,12 @@ func (r *Renderer) Update(t int64) {
 		b := points[tri.B]
 		c := points[tri.C]
 
-		TextureTriangle(a,b,c, tex, &buf, frame.Width, frame.Height) // TODO: no depth buffering here yet
+		if a.Z > 0 || b.Z > 0 || c.Z > 0 {
+			// Should check if any are in front and do clipping. But not yet
+			break // we should be drawing in order, so reject anything behind the camera
+		}
+
+		TextureTriangle(a,b,c, tex, &buf, frame.Width, frame.Height)
 	}
 }
 
