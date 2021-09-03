@@ -33,7 +33,8 @@ func NewRenderer(width, height int) *Renderer {
 	targetA = true
 
 	basicScene := NewScene()
-	basicScene.AddCube()
+	//basicScene.AddCube()
+	basicScene.AddFancyCube()
 
 	return &Renderer{
 		width:  width,
@@ -71,7 +72,7 @@ func (r *Renderer) Update(t int64) {
 	// Update scene
 	r.scene.Advance(t)
 	r.scene.Camera.Position = Vec3{
-		math.Cos(r.scene.Time/3)*5, math.Sin(r.scene.Time/2)-1, math.Sin(r.scene.Time)*5,
+		math.Cos(r.scene.Time/3)*5, math.Sin(r.scene.Time/2), math.Sin(r.scene.Time)*5,
 	}
 
 	// Do the transforms (scene & perspective)

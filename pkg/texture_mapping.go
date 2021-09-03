@@ -219,7 +219,10 @@ func drawTexPolyPerspDivSubTri(poly *mappingVars) {
 }
 
 func drawTexPolyPerspDivSubTriSegment(poly *mappingVars, y1, y2 int) {
-	// TODO: bounds checks
+	// Bounds checks
+
+	if y1 < 0 {y1 = 0} else if y1 >= poly.screenHeight{y1 = poly.screenHeight-1}
+	if y2 < 0 {y2 = 0} else if y2 >= poly.screenHeight{y2 = poly.screenHeight-1}
 
 	texW := int64(poly.tex.Width - 1)
 	texH := int64(poly.tex.Height - 1)
@@ -230,6 +233,9 @@ func drawTexPolyPerspDivSubTriSegment(poly *mappingVars, y1, y2 int) {
 		var u1, v1, u2, v2, u, v, du, dv int64
 		var x1 = int(poly.xa)
 		var x2 = int(poly.xb)
+
+		if x1 < 0 {x1 = 0} else if x1 >= poly.screenWidth{x1 = poly.screenWidth-1}
+		if x2 < 0 {x2 = 0} else if x2 >= poly.screenWidth{x2 = poly.screenWidth-1}
 
 		// Perform sub-texel pre-stepping on 1/Z, U/Z and V/Z
 

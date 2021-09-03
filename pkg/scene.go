@@ -8,6 +8,47 @@ type Scene struct {
 	Time     float64
 }
 
+func (s *Scene)AddFancyCube(){
+	texIdx := len(s.Textures)
+	tex := LoadFromPng("img/tex.png")
+	s.Textures = append(s.Textures, &tex)
+
+	base := len(s.Points)
+	w := tex.Width
+	h := tex.Height
+
+	// Add points
+	s.Points = append(s.Points, Vec3t{X: 1, Y:  1, Z:  1, U: w, V: 0})
+	s.Points = append(s.Points, Vec3t{X: -1, Y:  1, Z:  1, U: 0, V: 0})
+	s.Points = append(s.Points, Vec3t{X: -1, Y: -1, Z:  1, U: 0, V: h})
+	s.Points = append(s.Points, Vec3t{X: 1, Y: -1, Z:  1, U: w, V: h})
+
+	s.Points = append(s.Points, Vec3t{X: -1, Y:  1, Z: -1, U: w, V: h})
+	s.Points = append(s.Points, Vec3t{X: -1, Y: -1, Z: -1, U: w, V: 0})
+	s.Points = append(s.Points, Vec3t{X: 1, Y: -1, Z: -1, U: 0, V: 0})
+	s.Points = append(s.Points, Vec3t{X: 1, Y:  1, Z: -1, U: 0, V: h})
+
+	// Stitch triangles
+	// back
+	s.Geometry = append(s.Geometry, RefTriangle{A: base + 0, B: base + 1, C: base + 2, Tex: texIdx})
+	s.Geometry = append(s.Geometry, RefTriangle{A: base + 2, B: base + 3, C: base + 0, Tex: texIdx})
+	// front
+	s.Geometry = append(s.Geometry, RefTriangle{A: base + 4, B: base + 5, C: base + 6, Tex: texIdx})
+	s.Geometry = append(s.Geometry, RefTriangle{A: base + 6, B: base + 7, C: base + 4, Tex: texIdx})
+	// top
+	s.Geometry = append(s.Geometry, RefTriangle{A: base + 1, B: base + 4, C: base + 7, Tex: texIdx})
+	s.Geometry = append(s.Geometry, RefTriangle{A: base + 7, B: base + 0, C: base + 1, Tex: texIdx})
+	// bottom
+	s.Geometry = append(s.Geometry, RefTriangle{A: base + 2, B: base + 5, C: base + 6, Tex: texIdx})
+	s.Geometry = append(s.Geometry, RefTriangle{A: base + 6, B: base + 3, C: base + 2, Tex: texIdx})
+	// left
+	s.Geometry = append(s.Geometry, RefTriangle{A: base + 1, B: base + 4, C: base + 5, Tex: texIdx})
+	s.Geometry = append(s.Geometry, RefTriangle{A: base + 5, B: base + 2, C: base + 1, Tex: texIdx})
+	// right
+	s.Geometry = append(s.Geometry, RefTriangle{A: base + 0, B: base + 7, C: base + 6, Tex: texIdx})
+	s.Geometry = append(s.Geometry, RefTriangle{A: base + 6, B: base + 3, C: base + 0, Tex: texIdx})
+}
+
 func (s *Scene) AddCube() {
 	base := len(s.Points)
 
@@ -55,16 +96,15 @@ func NewScene() *Scene {
 		Points:   []Vec3t{},
 		Textures: []*Texture{&nt},
 	}
-
 }
 
 func (s *Scene) ProjectPoints(screenWidth, screenHeight float64) []Vec3t{
-	up := Vec3{0,1,0}
+	up := Vec3{0,0,1}
 	world := &Mat4x4{}
 	world.setLookAt(s.Camera.Position, s.Camera.Target, up)
 
 	projt := &Mat4x4{}
-	projt.setProjectionMatrix(0.78,0.01, 10.0)
+	projt.setProjectionMatrix(0.78,0.01, 10000.0)
 
 	halfWidth := screenWidth / 2.0
 	halfHeight := screenHeight / 2.0

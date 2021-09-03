@@ -1,8 +1,14 @@
 package pkg
 
+import (
+	"image/png"
+	"log"
+	"os"
+)
+
 type Texture struct {
-	Width     int
-	Height    int
+	Width     uint32
+	Height    uint32
 	Bmp       [][]uint32 // BGRA 8-bit-per-channel
 	ScanBytes int
 }
@@ -28,6 +34,41 @@ func NullTexture() Texture {
 
 // LoadFromPng makes a texture from a PNG file
 func LoadFromPng(fileName string) Texture{
-	// TODO: implement
-	return Texture{}
+	texture, err := os.Open(fileName)
+	if err != nil {
+		wd, _ := os.Getwd()
+		log.Println("Working directory:",wd)
+		log.Fatal(err)
+	}
+	defer func(texture *os.File) {_ = texture.Close() }(texture)
+
+	//imData, imType, err := image.Decode(texture)
+	//if err != nil {fmt.Println(err)}
+
+	texImg, err := png.Decode(texture)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	width := texImg.Bounds().Dx()
+	height := texImg.Bounds().Dy()
+
+	// Make a square array and fill from the image
+	bmp := make([][]uint32, height)
+	for i:=0;i<height;i++ {
+		bmp[i] = make([]uint32, width)
+		for j := 0; j < width; j++ {
+			r,g,b,_ := texImg.At(j,i).RGBA()
+			r = r>>8; g = g>>8; b = b>>8
+
+			bmp[i][j] = r<<16 | g << 8 | b
+		}
+	}
+
+	return Texture{
+		Width:     uint32(width),
+		Height:    uint32(height),
+		Bmp:       bmp,
+		ScanBytes: width * 4,
+	}
 }
