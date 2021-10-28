@@ -52,13 +52,3 @@ func InvV3(a Vec3) Vec3{
 		Z: -a.Z,
 	}
 }
-
-// LengthV3 give component-wise: |a|
-func LengthV3(a Vec3) float64{
-	return math.Sqrt(a.X*a.X + a.Y*a.Y + a.Z*a.Z)
-}
-// SignZV3 gives -1 or +1 based on the sign of the Z component
-func SignZV3(a Vec3) float64{
-	if a.Z >= 0 {return 1}
-	return -1
-}

@@ -17,7 +17,9 @@ type RefTriangle struct {
 
 type SceneCam struct {
 	Position Vec3
-	Target Vec3
+	Target   Vec3
+	Yaw      float64
+	Pitch    float64
 }
 
 
@@ -43,15 +45,15 @@ func (s *Scene)AddFancyCube(texIdx int, px,py,pz float64){
 	h := tex.Height
 
 	// Add points
-	s.Points = append(s.Points, Vec3t{X: px+1, Y: py+1, Z: pz+1, U: w, V: 0})
-	s.Points = append(s.Points, Vec3t{X: px-1, Y: py+1, Z: pz+1, U: 0, V: 0})
-	s.Points = append(s.Points, Vec3t{X: px-1, Y: py-1, Z: pz+1, U: 0, V: h})
-	s.Points = append(s.Points, Vec3t{X: px+1, Y: py-1, Z: pz+1, U: w, V: h})
+	s.Points = append(s.Points, Vec3t{X: px+1, Y: py+1, Z: pz+1, U: 0, V: 0})
+	s.Points = append(s.Points, Vec3t{X: px-1, Y: py+1, Z: pz+1, U: w, V: 0})
+	s.Points = append(s.Points, Vec3t{X: px-1, Y: py-1, Z: pz+1, U: w, V: h})
+	s.Points = append(s.Points, Vec3t{X: px+1, Y: py-1, Z: pz+1, U: 0, V: h})
 
-	s.Points = append(s.Points, Vec3t{X: px-1, Y: py+1, Z: pz-1, U: w, V: h})
-	s.Points = append(s.Points, Vec3t{X: px-1, Y: py-1, Z: pz-1, U: w, V: 0})
-	s.Points = append(s.Points, Vec3t{X: px+1, Y: py-1, Z: pz-1, U: 0, V: 0})
-	s.Points = append(s.Points, Vec3t{X: px+1, Y: py+1, Z: pz-1, U: 0, V: h})
+	s.Points = append(s.Points, Vec3t{X: px-1, Y: py+1, Z: pz-1, U: 0, V: h})
+	s.Points = append(s.Points, Vec3t{X: px-1, Y: py-1, Z: pz-1, U: 0, V: 0})
+	s.Points = append(s.Points, Vec3t{X: px+1, Y: py-1, Z: pz-1, U: w, V: 0})
+	s.Points = append(s.Points, Vec3t{X: px+1, Y: py+1, Z: pz-1, U: w, V: h})
 
 	// Stitch triangles
 	// back
@@ -111,11 +113,12 @@ func (s *Scene) AddCube() {
 
 func (s *Scene) ProjectPoints(screenWidth, screenHeight float64) []Vec3t{
 	world := &Mat4x4{}
-	world.setLookAt(s.Camera.Position, s.Camera.Target)
+	//world.setLookAt(s.Camera.Position, s.Camera.Target)
+	world.FPSViewRH(s.Camera.Position, s.Camera.Pitch, s.Camera.Yaw)
 
-	viewAngle := screenHeight / screenWidth // or ~ 0.7
+	//viewAngle := screenHeight / screenWidth // or ~ 0.7
 	projt := &Mat4x4{}
-	projt.setProjectionMatrix(viewAngle,0.01, 100.0)
+	projt.setProjectionMatrix(/*viewAngle*/0.78,0.01, 100.0)
 
 	halfWidth := screenWidth / 2.0
 	halfHeight := screenHeight / 2.0

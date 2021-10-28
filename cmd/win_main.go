@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"retro3d/pkg"
 	"syscall"
 	"time"
@@ -139,7 +140,7 @@ func DrawBitsIntoWindow(hwnd syscall.Handle) {
 	height := rc.bottom
 	if width < 1 || height < 1 {
 		fmt.Println("error: invalid rectangle size")
-		return
+		os.Exit(0)
 	}
 
 	hdc := getDC(hwnd)

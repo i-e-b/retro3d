@@ -219,16 +219,11 @@ func drawTexPolyPerspDivSubTri(poly *mappingVars) {
 }
 
 func drawTexPolyPerspDivSubTriSegment(poly *mappingVars, y1, y2 int) {
-	// Bounds checks
-
-	if y1 < 0 {y1 = 0} else if y1 >= poly.screenHeight{y1 = poly.screenHeight-1}
-	if y2 < 0 {y2 = 0} else if y2 >= poly.screenHeight{y2 = poly.screenHeight-1}
-
 	texW := int64(poly.tex.Width - 1)
 	texH := int64(poly.tex.Height - 1)
 
 	for y1 < y2 { // Loop through all lines in segment
-		if y1 >= 0 {
+		if y1 >= 0 && y1 < poly.screenHeight { // bounds check
 			var iz, uiz, viz float64
 			var u1, v1, u2, v2, u, v, du, dv int64
 			var x1 = int(poly.xa)
@@ -309,16 +304,8 @@ func drawTexPolyPerspDivSubTriSegment(poly *mappingVars, y1, y2 int) {
 
 					var intU = ju >> 16
 					var intV = jv >> 16
-					if intU > texW {
-						intU = texW
-					} else if intU < 0 {
-						intU = 0
-					}
-					if intV > texH {
-						intV = texH
-					} else if intV < 0 {
-						intV = 0
-					}
+					if intU > texW {intU = texW} else if intU < 0 {intU = 0}
+					if intV > texH {intV = texH} else if intV < 0 {intV = 0}
 
 					color := poly.tex.Bmp[intV][intU]
 					(*poly.screen)[cursor] = color
@@ -376,16 +363,8 @@ func drawTexPolyPerspDivSubTriSegment(poly *mappingVars, y1, y2 int) {
 
 					var intU = ju >> 16
 					var intV = jv >> 16
-					if intU > texW {
-						intU = texW
-					} else if intU < 0 {
-						intU = 0
-					}
-					if intV > texH {
-						intV = texH
-					} else if intV < 0 {
-						intV = 0
-					}
+					if intU > texW {intU = texW} else if intU < 0 {intU = 0}
+					if intV > texH {intV = texH} else if intV < 0 {intV = 0}
 
 					// Copy pixel from texture to screen
 					color := poly.tex.Bmp[intV][intU]

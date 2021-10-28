@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"math"
 	"sort"
 	"unsafe"
 )
@@ -36,8 +37,8 @@ func NewRenderer(width, height int) *Renderer {
 	basicScene.AddCube()
 	wallTex := basicScene.AddTexture("img/wall.png")
 	wordTex := basicScene.AddTexture("img/text.png")
-	basicScene.AddFancyCube(wallTex,-2.0, 0.0, 0.0)
-	basicScene.AddFancyCube(wordTex,2.0, 0.0, 0.0)
+	basicScene.AddFancyCube(wallTex,-2.0, 0.25, 0.0)
+	basicScene.AddFancyCube(wordTex,2.0, -0.25, 0.0)
 
 	return &Renderer{
 		width:  width,
@@ -75,9 +76,14 @@ func (r *Renderer) Update(t int64) {
 	// Update scene
 	r.scene.Advance(t)
 	r.scene.Camera.Position = Vec3{
-		/*math.Cos(r.scene.Time/6)*5*/-1, /*math.Sin(r.scene.Time/4)*/ -1, /*math.Sin(r.scene.Time/2)*5*/ -3,
+	    math.Cos(r.scene.Time/3)*10, 0, -math.Sin(r.scene.Time/3)*5 + 8,
 	}
-	r.scene.Camera.Target.Y = r.scene.Camera.Position.Y // cheat so we don't need a correct 'up' vector
+	r.scene.Camera.Yaw = math.Pi + (math.Sin(r.scene.Time)*0.2) // 0 is facing +Z, pi is facing -Z
+	r.scene.Camera.Pitch = 0//math.Sin(r.scene.Time/6)*math.Pi
+	/*
+	r.scene.Camera.Target = Vec3{
+		math.Cos(r.scene.Time/6)*3,1,0,
+	}*/
 
 	// Do the transforms (scene & perspective)
 	points := r.scene.ProjectPoints(float64(frame.Width), float64(frame.Height))

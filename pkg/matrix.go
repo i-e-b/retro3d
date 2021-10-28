@@ -38,25 +38,40 @@ func (M *Mat4x4) mulVec3t(in, out *Vec3t) {
 	out.V = in.V
 }
 
+func (M *Mat4x4) FPSViewRH(eye Vec3, pitch, yaw float64) {
+	// I assume the values are already converted to radians.
+	cosPitch := math.Cos(pitch)
+	sinPitch := math.Sin(pitch)
+	cosYaw := math.Cos(yaw)
+	sinYaw := math.Sin(yaw)
+
+	xaxis := Vec3{cosYaw, 0, -sinYaw}
+	yaxis := Vec3{sinYaw * sinPitch, cosPitch, cosYaw * sinPitch}
+	zaxis := Vec3{sinYaw * cosPitch, -sinPitch, cosPitch * cosYaw}
+
+	eX := DotV3(xaxis, eye)
+	eY := DotV3(yaxis, eye)
+	eZ := DotV3(zaxis, eye)
+
+	// Create a 4x4 view matrix from the right, up, forward and eye position vectors
+	M.m00 = xaxis.X;		M.m01 = yaxis.X;		M.m02 = zaxis.X;		M.m03 = 0
+	M.m10 = xaxis.Y;		M.m11 = yaxis.Y;		M.m12 = zaxis.Y;		M.m13 = 0
+	M.m20 = xaxis.Z;		M.m21 = yaxis.Z;		M.m22 = zaxis.Z;		M.m23 = 0
+	M.m30 = eX;				M.m31 = eY;				M.m32 = eZ;				M.m33 = 1
+}
+
 // setLookAt sets the matrix to translate by position, then rotate toward target and up.
 func (M *Mat4x4)setLookAt(position, target Vec3){
+	vv := SubV3(target, position) // view vector
+	zx := NormalV3(vv)
 
-	zx := NormalV3(SubV3(target, position))
+	// calculate the 'up' vector. This is not in world space, but
+	// is perpendicular to the view vector.
+	horizon := Vec3{1,0,1}
+	up := NormalV3(CrossV3(vv, horizon))
+	//if up.Y > 0 {up.Y = -up.Y}
+	//up := Vec3{0,1,0}
 
-	// "For any nonzero vector (a,b,c), the three of (0,c,−b),(−c,0,a) and (−b,a,0) are orthogonal to it."
-	// "the vector (sz(z+sz)−x^2,−xy,−x(z+sz)) with sz:=sign(z)∥(x,y,z)∥ is orthogonal to the vector (x,y,z)"
-	up := Vec3{0,1,0} // TODO: calculate this from position and target
-
-	//sz := LengthV3(zx) * SignZV3(zx)
-	//up := Vec3{sz+(zx.Z+sz)-(zx.X*zx.X), -zx.X * zx.Y, -zx.X*(zx.Z+sz)}
-
-	//up := Vec3{-zx.Z,0,zx.X} // (−c,0,a)
-	//up := Vec3{0, zx.Z, -zx.Y} // (0,c,-b)
-	//up := Vec3{0, -zx.Z, zx.Y}
-
-	//up := Vec3{-zx.Z,1,zx.X} // (−c,0,a)
-
-	up = NormalV3(up)
 	xx := NormalV3(CrossV3(up, position))
 	yx := CrossV3(zx, xx)
 	ne := InvV3(position)
