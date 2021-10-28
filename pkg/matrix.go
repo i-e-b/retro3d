@@ -62,26 +62,8 @@ func (M *Mat4x4) FPSViewRH(eye Vec3, pitch, yaw float64) {
 
 // setLookAt sets the matrix to translate by position, then rotate toward target and up.
 func (M *Mat4x4)setLookAt(position, target Vec3){
-	vv := SubV3(target, position) // view vector
-	zx := NormalV3(vv)
-
-	// calculate the 'up' vector. This is not in world space, but
-	// is perpendicular to the view vector.
-	horizon := Vec3{1,0,1}
-	up := NormalV3(CrossV3(vv, horizon))
-	//if up.Y > 0 {up.Y = -up.Y}
-	//up := Vec3{0,1,0}
-
-	xx := NormalV3(CrossV3(up, position))
-	yx := CrossV3(zx, xx)
-	ne := InvV3(position)
-
-	eX := - DotV3(xx, ne)
-	eY := - DotV3(yx, ne)
-	eZ := - DotV3(zx, ne)
-
-	M.m00 = xx.X;		M.m01 = yx.X;		M.m02 = zx.X;		M.m03 = 0
-	M.m10 = xx.Y;		M.m11 = yx.Y;		M.m12 = zx.Y;		M.m13 = 0
-	M.m20 = xx.Z;		M.m21 = yx.Z;		M.m22 = zx.Z;		M.m23 = 0
-	M.m30 = eX;			M.m31 = eY;			M.m32 = eZ;			M.m33 = 1
+	point := NormalV3(SubV3(target, position))
+	pitch :=point.Y
+	yaw := math.Atan2(point.X, point.Z)
+	M.FPSViewRH(position, pitch, yaw)
 }

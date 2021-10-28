@@ -76,14 +76,16 @@ func (r *Renderer) Update(t int64) {
 	// Update scene
 	r.scene.Advance(t)
 	r.scene.Camera.Position = Vec3{
-	    math.Cos(r.scene.Time/3)*10, 0, -math.Sin(r.scene.Time/3)*5 + 8,
+	    //math.Cos(r.scene.Time/3)*10, 0, -math.Sin(r.scene.Time/3)*5 + 8,
+		math.Cos(r.scene.Time/3)*4, 0, -math.Sin(r.scene.Time/3)*4,
 	}
 	r.scene.Camera.Yaw = math.Pi + (math.Sin(r.scene.Time)*0.2) // 0 is facing +Z, pi is facing -Z
-	r.scene.Camera.Pitch = 0//math.Sin(r.scene.Time/6)*math.Pi
-	/*
+	r.scene.Camera.Pitch = math.Sin(r.scene.Time/6)*0.1
+
 	r.scene.Camera.Target = Vec3{
-		math.Cos(r.scene.Time/6)*3,1,0,
-	}*/
+		0,math.Cos(r.scene.Time/6)*3, 0,
+		//math.Cos(r.scene.Time/6)*3,1,0,
+	}
 
 	// Do the transforms (scene & perspective)
 	points := r.scene.ProjectPoints(float64(frame.Width), float64(frame.Height))
