@@ -77,13 +77,17 @@ func (r *Renderer) Update(t int64) {
 	r.scene.Advance(t)
 	r.scene.Camera.Position = Vec3{
 	    //math.Cos(r.scene.Time/3)*10, 0, -math.Sin(r.scene.Time/3)*5 + 8,
-		math.Cos(r.scene.Time/3)*4, 0, -math.Sin(r.scene.Time/3)*4,
+		//math.Cos(r.scene.Time/3)*4, 0, -math.Sin(r.scene.Time/3)*4,
+
+		//-5,(math.Sin(r.scene.Time/3)+1.0) * 2.5,-5,
+		math.Cos(r.scene.Time/3)*4, (math.Sin(r.scene.Time/6)+1.0) * 2.5, -math.Sin(r.scene.Time/3)*4,
 	}
 	r.scene.Camera.Yaw = math.Pi + (math.Sin(r.scene.Time)*0.2) // 0 is facing +Z, pi is facing -Z
 	r.scene.Camera.Pitch = math.Sin(r.scene.Time/6)*0.1
 
 	r.scene.Camera.Target = Vec3{
-		0,math.Cos(r.scene.Time/6)*3, 0,
+		0,0,0,
+		//0,math.Cos(r.scene.Time), 0,
 		//math.Cos(r.scene.Time/6)*3,1,0,
 	}
 
